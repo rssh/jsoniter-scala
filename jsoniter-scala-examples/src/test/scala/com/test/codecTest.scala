@@ -1,82 +1,18 @@
 package com.test
 
-import com.github.plokhotnyuk.jsoniter_scala.core.{readFromArray, writeToArray}
-import io.circe.JsonOrString._
-import com.test.Text.textCodec
-import io.circe.{Json, JsonObject}
-import io.circe.generic.codec.DerivedAsObjectCodec.deriveCodec
-import io.circe.syntax.EncoderOps
+import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.test.Codecs._
 import org.scalatest.{Matchers, WordSpec}
-import com.test.LogRecord._
 
 class codecTest extends WordSpec with Matchers {
 
   "decoding text " should {
 
-    "parse text in case string value" in {
-      val inputText = """{"text":"hello this is a test"}""".stripMargin
-
-      val expectedText = Text(Str("hello this is a test"))
-      val text: Text = readFromArray(inputText.getBytes("UTF-8"))(textCodec)
-      val json: Array[Byte] = writeToArray(expectedText)
-      text shouldBe expectedText
-      new String(json, "UTF-8") shouldBe inputText
-    }
-    "parse text in case jsonObject value" in {
-      val inner = Map[String,Json]("someValue" -> "hello".asJson, "anotherValue" -> 1.asJson, "justAnother" -> 2.0.asJson)
-      val outer = Map[String,Json]("text" -> inner.asJson)
-      val jObject: JsonObject = JsonObject.fromMap(outer)
-      val objectStr: String = jObject.asJson.noSpaces
-      val expectedText: Text = Text(Js(Left(jObject)))
-
-      val text: Text = readFromArray(objectStr.getBytes("UTF-8"))(textCodec)
-      val json: Array[Byte] = writeToArray(expectedText)
-      text shouldBe expectedText
-      new String(json, "UTF-8") shouldBe objectStr
-    }
-
-    "parse text in case list[json] value" in {
-      val inner = Map[String,Json]("hello" -> 5.asJson).asJson
-      val list = List[Json](inner,inner,inner,inner,inner)
-      val listStr: String = Json.fromValues(list).noSpaces
-      val expectedText: Text = Text(Js(Right(list)))
-      val text: Text = readFromArray(listStr.getBytes("UTF-8"))(textCodec)
-      val json: Array[Byte] = writeToArray(expectedText)
-      text shouldBe expectedText
-      new String(json, "UTF-8") shouldBe listStr
-    }
-  }
-
-  "decoding logRecord " should {
-
-    "decode threadID as long" in {
-      val logRecord: LogRecord = LogRecord(Some(Left(1)))
-      val logRecordText: String = logRecord.asJson(LogRecord.encoder).noSpaces
-
-      val logRecordTest: LogRecord = readFromArray(logRecordText.getBytes("UTF-8"))(logRecordCodec)
-      val logRecordJson: Array[Byte] = writeToArray(logRecord)(logRecordCodec)
-      logRecordTest shouldBe logRecord
-      new String(logRecordJson, "UTF-8") shouldBe logRecordText
-    }
-
-    "decode threadID as String" in {
-      val logRecord: LogRecord = LogRecord(Some(Right("5")))
-      val logRecordText: String = logRecord.asJson(LogRecord.encoder).noSpaces
-
-      val logRecordTest: LogRecord = readFromArray(logRecordText.getBytes("UTF-8"))(logRecordCodec)
-      val logRecordJson: Array[Byte] = writeToArray(logRecord)(logRecordCodec)
-      logRecordTest shouldBe logRecord
-      new String(logRecordJson, "UTF-8") shouldBe logRecordText
-    }
-
-    "decode threadID as null" in {
-      val logRecord: LogRecord = LogRecord(None)
-      val logRecordText: String = logRecord.asJson(LogRecord.encoder).noSpaces
-
-      val logRecordTest: LogRecord = readFromArray(logRecordText.getBytes("UTF-8"))(logRecordCodec)
-      val logRecordJson: Array[Byte] = writeToArray(logRecord)(logRecordCodec)
-      logRecordTest shouldBe logRecord
-      new String(logRecordJson, "UTF-8") shouldBe logRecordText
+    "decode bulk" in {
+      val bulk =
+        """{"subsystemName":"something","applicationName":"something","privateKey":"something","computerName":"something","logEntries":[{"category":"something","className":"something","methodName":"something","severity":3,"threadId":140136948304616,"timestamp":15435706484983514,"logSeed":5683,"text":{"processing_breakdown":{"fetching_messages":{"num":1,"sum":2.0020086765,"avg":2.0020086765},"no_messages_sleep":{"num":0,"sum":0,"avg":0},"processing_messages":{"subprocesses":{"index_erroneous_logs":{"subprocesses":{"error_calc_bulk_size":{"num":0,"sum":0,"avg":0}},"num":0,"sum":0,"avg":0},"update_bulk":{"subprocesses":{"update_bulk_prepare_docs":{"num":0,"sum":0,"avg":0},"update_bulk_insert_updates":{"num":0,"sum":0,"avg":0},"update_bulk_msearch_query":{"num":0,"sum":0,"avg":0}},"num":1,"sum":0.0000030994,"avg":0.0000030994},"prepare_es_doc":{"num":463,"sum":0.0176346302,"avg":0.0000380878},"prepare_es_insert_action":{"num":463,"sum":0.0154974461,"avg":0.0000334718},"index_bulk":{"subprocesses":{"calc_bulk_size":{"num":1,"sum":0.008865118,"avg":0.008865118},"index_handle_error":{"subprocesses":{"index_handle_limit_fields":{"num":0,"sum":0,"avg":0},"index_handle_mapping_exception":{"num":0,"sum":0,"avg":0}},"num":0,"sum":0,"avg":0},"send_to_es":{"num":1,"sum":0.1224887371,"avg":0.1224887371}},"num":1,"sum":0.1313719749,"avg":0.1313719749},"message_json_loads":{"num":463,"sum":0.0067739487,"avg":0.0000146306}},"num":1,"sum":0.1766602993,"avg":0.1766602993}},"class":"something","batch_size":"108.172.107.120","method":{"ip":"108.172.107.120"}},"logId":"something"}],"es_cluster":"something","sdk":{"version":"1.1.0","bulkSeed":[62336,2809963446],"companyId":33,"applicationName":"something","subsystemName":"something","computerName":"something","IPAddress":"","id":"something","es_cluster":null,"processName":null},"SDKId":"something"}"""
+      val res = readFromArray[Bulk](bulk.getBytes("UTF-8"))
+      new String(writeToArray(res), "UTF-8") shouldBe bulk
     }
   }
 }

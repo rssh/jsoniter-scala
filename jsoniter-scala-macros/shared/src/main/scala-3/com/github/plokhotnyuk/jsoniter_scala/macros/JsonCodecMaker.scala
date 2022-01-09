@@ -3071,7 +3071,9 @@ object JsonCodecMaker {
                   val s = $in.readString(null)
                   var x = $ec.get(s)
                   if ( ${ 'x.asExprOf[AnyRef] } eq null) {
-                    x = ${findScala2EnumerationByName[C & Enumeration#Value](tpe,'s)}.getOrElse($in.enumValueError(s.length))
+                    x = ${findScala2EnumerationByName[C & Enumeration#Value](tpe,'s)}.getOrElse{
+                      $in.enumValueError(s.length)
+                    }
                     $ec.put(s, x)
                   }
                   x
